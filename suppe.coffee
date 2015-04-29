@@ -11,6 +11,8 @@ module.exports.suppe = (grunt, opts = {}) ->
   overridden_config ?= {}
   closure_libs ?= ["#{var_dir}/#{bower_dir}/werkzeug/**/*.js"]
   closure_libs.push "#{var_dir}/#{src_dir}/**/*.js"
+  sass_dir = "dj/static/styles"
+  css_dist = "dj/static/styles/dist"
 
   app_dirs = [
     closure_lib_dir
@@ -26,7 +28,7 @@ module.exports.suppe = (grunt, opts = {}) ->
   ]
 
   watch_dirs ?= []
-  watch_dirs = watch_dirs.concat "#{src_dir}/**/", "#{var_dir}/#{src_dir}/**/"
+  watch_dirs = watch_dirs.concat "#{src_dir}/**/", "#{var_dir}/#{src_dir}/**/", "#{sass_dir}/**/"
 
   app_compiled_output_path ?= 'dj/static/js/app.js'
 
@@ -43,6 +45,8 @@ module.exports.suppe = (grunt, opts = {}) ->
           force: true
         src: [
           "#{var_dir}/#{src_dir}/**/*.js"
+          "#{css_dist}/**/*.css"
+          "#{css_dist}/**/*.map"
         ]
 
     coffee:
@@ -110,6 +114,26 @@ module.exports.suppe = (grunt, opts = {}) ->
           namespace: app_namespace
           outputFilePath: app_compiled_output_path
 
+    sass:
+      all:
+        files: [
+          expand: true
+          cwd: sass_dir
+          src: ['app.sass']
+          dest: css_dist
+          ext: '.css'
+        ]
+
+    cssmin:
+      all:
+        files: [
+          expand: true
+          cwd: css_dist
+          src: ['app.css']
+          dest: css_dist
+          ext: '.min.css'
+        ]
+
     esteUnitTests:
       options:
         basePath: closure_lib_dir + '/closure/goog/base.js'
@@ -141,6 +165,9 @@ module.exports.suppe = (grunt, opts = {}) ->
         grunt.config ['esteDeps', 'all', 'src'], filepath
         grunt.config ['esteUnitTests', 'all', 'src'], filepath
         ['esteDeps', 'esteUnitTests']
+
+      sass: ->
+        ['sass', 'cssmin']
 
     coffeelint:
       options:
@@ -174,10 +201,14 @@ module.exports.suppe = (grunt, opts = {}) ->
   grunt.loadNpmTasks 'grunt-este'
   grunt.loadNpmTasks 'grunt-este-watch'
   grunt.loadNpmTasks 'grunt-zuckrig-closure'
+  grunt.loadNpmTasks 'grunt-contrib-sass'
+  grunt.loadNpmTasks 'grunt-contrib-cssmin'
 
   grunt.registerTask 'build', 'Build app.', ->
     tasks = [
       "clean"
+      "sass"
+      "cssmin"
       "coffee"
       'zuckrig'
       "coffee2closure"
@@ -191,6 +222,8 @@ module.exports.suppe = (grunt, opts = {}) ->
   grunt.registerTask 'run', 'Build app and run watchers.', ->
     tasks = [
       "clean"
+      "sass"
+      "cssmin"
       "coffee"
       'zuckrig'
       "coffee2closure"
